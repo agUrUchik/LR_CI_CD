@@ -1,28 +1,55 @@
-name: PR Checks
+name: CI/CD Pipeline for Car Project
 
 on:
   pull_request:
-    branches: [ master, main ]
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-  test:
+  quality-checks:
+    name: Code Quality & Tests
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
     
-    - name: Setup Python
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+  
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
+        
     
     - name: Install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install ruff pytest
-        pip install -r requirements.txt  # если есть
+        
     
-    - name: Run Ruff checks
-      run: ruff check . --output-format=github
+    - name: Check Python imports
+      run: |
+        python -c "import sys; sys.path.insert(0, 'src'); from car import Car; print('Car class imported successfully')"
+        
     
-    - name: Run tests
-      run: pytest tests/ -v  # или другая команда для тестов
+    - name: Run Unit Tests
+      run: |
+        echo "Running tests from src/test_class_car.py"
+        cd src
+        pytest test_class_car.py -v
+        
+    
+    - name: Run Ruff linter
+      run: |
+        echo "Checking all Python files in src/"
+        ruff check --config=ruff.toml ./src/
+        
+    
+  
+    - name: Lint source files only (excluding tests)
+      run: |
+        echo "Linting source files (excluding test files)"
+        ruff check --config=ruff.toml --exclude "*test*.py" ./src/
